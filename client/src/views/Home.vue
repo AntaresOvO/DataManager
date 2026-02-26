@@ -197,6 +197,7 @@ function getFilteredRows(w) {
 
 // 聚合计算
 function aggregate(values, agg) {
+  if (agg === 'count') return values.length  // count 统计总行数，不限于数值
   const nums = values.map(Number).filter(v => !isNaN(v))
   if (!nums.length) return 0
   switch (agg) {
@@ -204,7 +205,7 @@ function aggregate(values, agg) {
     case 'avg': return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length * 100) / 100
     case 'max': return Math.max(...nums)
     case 'min': return Math.min(...nums)
-    default: return nums.length
+    default: return values.length
   }
 }
 
