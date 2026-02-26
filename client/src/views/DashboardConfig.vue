@@ -7,6 +7,7 @@
       </div>
       <div style="display:flex;gap:8px">
         <el-button @click="$router.push('/')"><el-icon><ArrowLeft /></el-icon> 返回</el-button>
+        <el-button @click="loadSample" :loading="sampleLoading">加载示例</el-button>
         <el-button type="primary" @click="openAdd"><el-icon><Plus /></el-icon> 添加图表</el-button>
       </div>
     </div>
@@ -255,6 +256,7 @@ const dialogVisible = ref(false)
 const editIndex = ref(-1)
 const activeTab = ref('basic')
 const tableFieldNames = ref([])
+const sampleLoading = ref(false)
 
 const defaultForm = () => ({
   title: '', templateId: null, size: 'half', chartType: 'bar',
@@ -350,6 +352,51 @@ function onFieldChange(name) {
 
 function onTableFieldsChange(names) {
   form.value.tableFields = names.map(n => ({ name: n, label: fieldLabel(n) }))
+}
+
+async function loadSample() {
+  sampleLoading.value = true
+  try {
+    const res = await getTemplates({ page: 1, page_size: 100 })
+    const tpls = res.data.list
+    const emp = tpls.find(t => t.name === '员工信息表')
+    const fb  = tpls.find(t => t.name === '产品反馈表')
+    const samples = []
+
+    if (emp) {
+      samples.push(
+        { id:'s1',  title:'员工总数',           templateId:emp.id, templateName:emp.name, size:'quarter', chartType:'stat',   fieldName:'__count__', fieldLabel:'记录总数', aggregation:'count', colorTheme:0, showTrend:true,  extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s2',  title:'平均年龄',           templateId:emp.id, templateName:emp.name, size:'quarter', chartType:'stat',   fieldName:'age',       fieldLabel:'年龄',    aggregation:'avg',   colorTheme:1, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s3',  title:'性别比例',           templateId:emp.id, templateName:emp.name, size:'quarter', chartType:'pie',    fieldName:'gender',    fieldLabel:'性别',    aggregation:'count', colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s4',  title:'部门人数分布',       templateId:emp.id, templateName:emp.name, size:'half',    chartType:'bar',    fieldName:'department',fieldLabel:'部门',    aggregation:'count', colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s5',  title:'技能分布',           templateId:emp.id, templateName:emp.name, size:'half',    chartType:'bar',    fieldName:'skills',    fieldLabel:'技能',    aggregation:'count', colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s6',  title:'入职趋势（按月）',   templateId:emp.id, templateName:emp.name, size:'full',    chartType:'line',   fieldName:'__count__', fieldLabel:'入职人数',aggregation:'count', colorTheme:0, showTrend:false, extraFields:[], dateField:'entry_date', dateGroupBy:'month' },
+        { id:'s7',  title:'各部门平均年龄',     templateId:emp.id, templateName:emp.name, size:'half',    chartType:'bar',    fieldName:'department',fieldLabel:'部门',    aggregation:'count', colorTheme:0, showTrend:false,
+          extraFields:[{ name:'age', label:'平均年龄', type:'number', aggregation:'avg' }], dateField:'', dateGroupBy:'month' },
+      )
+    }
+
+    if (fb) {
+      samples.push(
+        { id:'s8',  title:'反馈总数',           templateId:fb.id, templateName:fb.name, size:'quarter', chartType:'stat',   fieldName:'__count__', fieldLabel:'记录总数', aggregation:'count', colorTheme:2, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s9',  title:'平均评分',           templateId:fb.id, templateName:fb.name, size:'quarter', chartType:'gauge',  fieldName:'rating',    fieldLabel:'评分',    aggregation:'avg',   gaugeMax:10,  colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s10', title:'各产品反馈量',       templateId:fb.id, templateName:fb.name, size:'half',    chartType:'bar',    fieldName:'product',   fieldLabel:'产品名称',aggregation:'count', colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s11', title:'问题分布',           templateId:fb.id, templateName:fb.name, size:'half',    chartType:'pie',    fieldName:'issues',    fieldLabel:'遇到的问题',aggregation:'count',colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s12', title:'问题严重程度漏斗',   templateId:fb.id, templateName:fb.name, size:'half',    chartType:'funnel', fieldName:'issues',    fieldLabel:'遇到的问题',aggregation:'count',colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month' },
+        { id:'s13', title:'各产品评分 vs 使用时长', templateId:fb.id, templateName:fb.name, size:'full', chartType:'bar',  fieldName:'product',   fieldLabel:'产品名称',aggregation:'count', colorTheme:0, showTrend:false,
+          extraFields:[{ name:'rating', label:'平均评分', type:'number', aggregation:'avg' }, { name:'usage_time', label:'平均使用时长(月)', type:'number', aggregation:'avg' }], dateField:'', dateGroupBy:'month' },
+        { id:'s14', title:'最新反馈记录',       templateId:fb.id, templateName:fb.name, size:'half',    chartType:'table',  fieldName:'product',   fieldLabel:'产品名称',aggregation:'count', colorTheme:0, showTrend:false, extraFields:[], dateField:'', dateGroupBy:'month',
+          tableFields:[{ name:'product', label:'产品名称' }, { name:'rating', label:'评分' }, { name:'usage_time', label:'使用时长(月)' }, { name:'issues', label:'问题' }, { name:'suggestion', label:'改进建议' }], topN:10 },
+      )
+    }
+
+    if (!samples.length) return ElMessage.warning('未找到示例模板，请先运行 seed_data.py')
+    widgets.value = samples
+    save()
+    ElMessage.success(`已加载 ${samples.length} 个示例图表`)
+  } finally {
+    sampleLoading.value = false
+  }
 }
 
 function confirmSave() {
