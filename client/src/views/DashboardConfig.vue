@@ -394,6 +394,8 @@ async function loadSample() {
     widgets.value = samples
     save()
     ElMessage.success(`已加载 ${samples.length} 个示例图表`)
+  } catch {
+    // 错误已由 request 拦截器统一处理（ElMessage.error）
   } finally {
     sampleLoading.value = false
   }
